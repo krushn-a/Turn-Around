@@ -1,0 +1,193 @@
+GAME TITLE: Turn Around ?
+THEME: Fear
+ENGINE: Hytopia (Voxel Sandbox)
+MODE: Single Player
+DURATION: 5–10 minutes
+
+------------------------------------------------------------
+1. CONCEPT OVERVIEW
+------------------------------------------------------------
+The player wakes up in a long, dimly lit tunnel.
+They are told only one rule: “Don’t turn around.”
+As they walk deeper, whispers, footsteps, and strange lights try to tempt them.
+If they turn around even once — the game ends.
+If they reach the exit without turning, they survive.
+
+Core Emotion: Suspense, restraint, and psychological tension.
+
+------------------------------------------------------------
+2. CORE GAMEPLAY LOOP
+------------------------------------------------------------
+1. Player spawns at tunnel entrance.
+2. On-screen message: "Don’t turn around."
+3. Player walks forward through checkpoints.
+4. Each checkpoint triggers new sounds or visuals behind them.
+5. If player turns back → immediate bad ending.
+6. If player reaches last checkpoint → good ending.
+
+------------------------------------------------------------
+3. MAIN GAMEPLAY MECHANICS
+------------------------------------------------------------
+- **Movement:** Forward-only exploration. No interactions or combat.
+- **Rotation Detection:** Track player facing direction. Turning beyond ±90° from forward triggers fail state.
+- **Checkpoint Events:** Each checkpoint activates unique environmental or audio effects.
+- **End Conditions:**
+  - SUCCESS: Player reaches final checkpoint.
+  - FAILURE: Player turns around.
+
+------------------------------------------------------------
+4. LEVEL DESIGN
+------------------------------------------------------------
+TUNNEL STRUCTURE:
+- Length: 250–300 blocks long
+- Width: 3 blocks
+- Height: 4 blocks
+- Material: Dark stone or obsidian blocks
+- Shape: Slightly curved or uneven for realism
+- Lighting: Starts faintly bright, dims gradually at each checkpoint
+- Fog: Medium density to obscure far distance
+
+DECORATION:
+- Flickering lights and sparse lanterns
+- Faint wall writings (e.g., “Don’t.” / “He’s behind you.”)
+- Cracked floor or debris particles
+- Dripping water sound or dust motes
+
+------------------------------------------------------------
+5. SOUND DESIGN PLAN
+------------------------------------------------------------
+Atmosphere depends on layered sound cues.
+
+GLOBAL:
+- Low ambient hum or wind tone loop.
+
+CHECKPOINT-BASED AUDIO EVENTS:
+| Checkpoint | Event | Description |
+|-------------|--------|-------------|
+| CP1 | Whisper: “Hey…” | Soft introduction, far behind. |
+| CP2 | Whisper: “Wait…” + small block fall sound | First temptation. |
+| CP3 | Footsteps start matching player’s pace. | Follows rhythmically. |
+| CP4 | Crying sound + flickering lights. | Emotional lure. |
+| CP5 | Heavy breathing directly behind. | Intense tension. |
+| CP6 | “Please… look at me.” whisper + wall shake. | Breaking point. |
+| CP7 | Loud metal scrape or knock. | Final scare before exit. |
+| CP8 | Exit glow visible, calm ambient replaces hum. | Relief phase. |
+
+POSITIONAL AUDIO:
+- All key sounds originate 2–3 blocks behind the player’s starting orientation.
+- Volume increases slightly with each checkpoint to simulate proximity.
+
+------------------------------------------------------------
+6. VISUAL TEMPTATIONS
+------------------------------------------------------------
+- Random light flickers from behind.
+- Shadow flicker that moves when player isn’t looking.
+- Particle spark or dust fall sound.
+- Reflection of something in puddles or glossy tiles.
+- Small object falls, luring curiosity.
+- Red scratch text: “TURN” or “HELP” near late checkpoints.
+
+------------------------------------------------------------
+7. CHECKPOINT FLOW
+------------------------------------------------------------
+CP0 — Start: Fade in, display “Don’t turn around.”
+CP1 — Whisper starts, ambient hum fades in.
+CP2 — Light flickers, faint noise behind.
+CP3 — Footsteps sync with player.
+CP4 — Crying or call for help sound.
+CP5 — Heavy breathing close to ear.
+CP6 — Wall vibration, tunnel rumble, whisper: “Look at me.”
+CP7 — Loud metal scrape or crash, short silence.
+CP8 — Light appears ahead, calming tone starts.
+Exit — Fade to white or black depending on outcome.
+
+------------------------------------------------------------
+8. ENDINGS
+------------------------------------------------------------
+BAD END (Player Turned Around):
+- Screen instantly fades to black.
+- One-frame distorted face flash.
+- Whisper: “I told you not to.”
+- Credits fade in silently.
+
+GOOD END (Player Reached Exit):
+- Tunnel brightens.
+- Calm ambient replaces hum.
+- Text: “You made it.”
+- Fade out → end screen / credits.
+
+------------------------------------------------------------
+9. SCRIPTING BLUEPRINT (PSEUDOCODE STYLE)
+------------------------------------------------------------
+Variables:
+- startFacingDirection (float)
+- rotationThreshold = 90 degrees
+- currentCheckpoint = 0
+- checkpoints[] = { positions of CP1–CP8 }
+
+Init():
+  - Save startFacingDirection = player.rotation.y
+  - Display text: “Don’t turn around.”
+  - Start ambient hum.
+
+OnUpdate():
+  - If abs(player.rotation.y - startFacingDirection) > rotationThreshold:
+        TriggerBadEnd()
+
+  - For each checkpoint in checkpoints:
+        If player passes checkpoint and checkpoint not triggered:
+            TriggerCheckpointEvent(checkpoint)
+            currentCheckpoint++
+
+  - If player reaches final checkpoint:
+        TriggerGoodEnd()
+
+TriggerCheckpointEvent(checkpoint):
+  - Play assigned sound (positional behind player)
+  - Trigger light flicker / particle / text if defined
+  - Optional: Camera shake or visual distortion
+
+TriggerBadEnd():
+  - Stop ambient sounds
+  - Play distortion + whisper
+  - Fade to black
+  - Display “I told you not to.”
+
+TriggerGoodEnd():
+  - Stop hum
+  - Fade to white
+  - Display “You made it.”
+
+------------------------------------------------------------
+10. DEVELOPMENT TASKS
+------------------------------------------------------------
+✅ Build tunnel with 8 checkpoint triggers  
+✅ Add lighting and fog layers  
+✅ Implement rotation detection logic  
+✅ Create checkpoint sound & visual triggers  
+✅ Set up ambient and whisper audio sources  
+✅ Create good/bad ending sequences  
+✅ Add UI text messages (start, end)  
+✅ Playtest pacing (aim: 5–10 min total)  
+✅ Polish lighting and sound transitions  
+✅ Prepare final build for submission  
+
+------------------------------------------------------------
+11. POLISH IDEAS (OPTIONAL)
+------------------------------------------------------------
+- Add camera sway or breathing audio when tension peaks.
+- Randomize whispers each playthrough for replayability.
+- Hidden “secret door” that loops tunnel infinitely.
+- Subtle heartbeat vibration sound synced with footsteps.
+- Optional collectible “glow cube” that triggers bad end if picked.
+
+------------------------------------------------------------
+12. STYLE NOTE
+------------------------------------------------------------
+The horror comes from restraint — not what’s seen, but what’s imagined.
+Contrast cozy voxel aesthetics with dark audio tension.
+Keep visuals minimal, atmosphere rich, and pacing slow enough to build dread.
+
+------------------------------------------------------------
+END OF PLAN
+------------------------------------------------------------
