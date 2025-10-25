@@ -77779,6 +77779,141 @@ var Z1 = t(kQ(), 1);
 var I1 = t(kQ(), 1);
 var q1 = t(kQ(), 1);
 var z1 = t(kQ(), 1);
+
+class MW extends Float32Array {
+  constructor(Z, J, X) {
+    super([Z, J, X]);
+  }
+  get length() {
+    return z1.vec3.length(this);
+  }
+  get squaredLength() {
+    return z1.vec3.squaredLength(this);
+  }
+  get magnitude() {
+    return z1.vec3.length(this);
+  }
+  get squaredMagnitude() {
+    return z1.vec3.squaredLength(this);
+  }
+  get x() {
+    return this[0];
+  }
+  set x(Z) {
+    this[0] = Z;
+  }
+  get y() {
+    return this[1];
+  }
+  set y(Z) {
+    this[1] = Z;
+  }
+  get z() {
+    return this[2];
+  }
+  set z(Z) {
+    this[2] = Z;
+  }
+  static create() {
+    return new MW(0, 0, 0);
+  }
+  static fromVector3Like(Z) {
+    return new MW(Z.x, Z.y, Z.z);
+  }
+  add(Z) {
+    return z1.vec3.add(this, this, Z), this;
+  }
+  ceil() {
+    return z1.vec3.ceil(this, this), this;
+  }
+  clone() {
+    return new MW(this.x, this.y, this.z);
+  }
+  copy(Z) {
+    return z1.vec3.copy(this, Z), this;
+  }
+  cross(Z) {
+    return z1.vec3.cross(this, this, Z), this;
+  }
+  distance(Z) {
+    return z1.vec3.distance(this, Z);
+  }
+  divide(Z) {
+    return z1.vec3.div(this, this, Z), this;
+  }
+  dot(Z) {
+    return z1.vec3.dot(this, Z);
+  }
+  equals(Z) {
+    return z1.vec3.equals(this, Z);
+  }
+  exactEquals(Z) {
+    return z1.vec3.exactEquals(this, Z);
+  }
+  floor() {
+    return z1.vec3.floor(this, this), this;
+  }
+  invert() {
+    return z1.vec3.inverse(this, this), this;
+  }
+  lerp(Z, J) {
+    return z1.vec3.lerp(this, this, Z, J), this;
+  }
+  max(Z) {
+    return z1.vec3.max(this, this, Z), this;
+  }
+  min(Z) {
+    return z1.vec3.min(this, this, Z), this;
+  }
+  multiply(Z) {
+    return z1.vec3.mul(this, this, Z), this;
+  }
+  negate() {
+    return z1.vec3.negate(this, this), this;
+  }
+  normalize() {
+    return z1.vec3.normalize(this, this), this;
+  }
+  randomize(Z) {
+    return z1.vec3.random(this, Z), this;
+  }
+  rotateX(Z, J) {
+    return z1.vec3.rotateX(this, this, Z, J), this;
+  }
+  rotateY(Z, J) {
+    return z1.vec3.rotateY(this, this, Z, J), this;
+  }
+  rotateZ(Z, J) {
+    return z1.vec3.rotateZ(this, this, Z, J), this;
+  }
+  round() {
+    return z1.vec3.round(this, this), this;
+  }
+  scale(Z) {
+    return z1.vec3.scale(this, this, Z), this;
+  }
+  scaleAndAdd(Z, J) {
+    return z1.vec3.scaleAndAdd(this, this, Z, J), this;
+  }
+  subtract(Z) {
+    return z1.vec3.sub(this, this, Z), this;
+  }
+  toString() {
+    return `${this.x},${this.y},${this.z}`;
+  }
+  transformMatrix3(Z) {
+    return z1.vec3.transformMat3(this, this, Z), this;
+  }
+  transformMatrix4(Z) {
+    return z1.vec3.transformMat4(this, this, Z), this;
+  }
+  transformQuaternion(Z) {
+    return z1.vec3.transformQuat(this, this, Z), this;
+  }
+  zero() {
+    return z1.vec3.zero(this), this;
+  }
+}
 var BG1 = t(UG1(), 1);
 // assets/map.json
 var map_default = {
@@ -82396,33 +82531,357 @@ var map_default = {
   version: "2.0.0"
 };
 
+// src/config/gameConfig.ts
+var GAME_CONFIG = {
+  TUNNEL_LENGTH: 280,
+  TUNNEL_WIDTH: 3,
+  TUNNEL_HEIGHT: 4,
+  SPAWN_POSITION: { x: 0, y: 10, z: 0 },
+  FORWARD_DIRECTION: 0,
+  ROTATION_THRESHOLD: 90,
+  CHECKPOINT_COUNT: 8,
+  CHECKPOINT_SPACING: 35,
+  TARGET_DURATION_MINUTES: 7,
+  AMBIENT_VOLUME: 0.3,
+  WHISPER_VOLUME: 0.8,
+  EFFECTS_VOLUME: 0.6,
+  FOG_DENSITY: 0.6,
+  INITIAL_LIGHT_LEVEL: 0.7,
+  MINIMUM_LIGHT_LEVEL: 0.2
+};
+
+// src/entities/GamePlayerEntity.ts
+class GamePlayerEntity extends rO {
+  gameManager;
+  lastRotation = 0;
+  hasStartedMoving = false;
+  spawnPosition;
+  constructor(options) {
+    super({
+      player: options.player,
+      name: options.name
+    });
+    this.gameManager = options.gameManager;
+    this.spawnPosition = new MW(GAME_CONFIG.SPAWN_POSITION.x, GAME_CONFIG.SPAWN_POSITION.y, GAME_CONFIG.SPAWN_POSITION.z);
+  }
+  spawn(world, position) {
+    super.spawn(world, position);
+    this.spawnPosition = position;
+    this.lastRotation = this.rotation.y;
+    console.log(`GamePlayerEntity spawned at position:`, position);
+    this.setupTickHandler();
+  }
+  setupTickHandler() {
+    const tickInterval = setInterval(() => {
+      if (!this.world) {
+        clearInterval(tickInterval);
+        return;
+      }
+      this.handleGameTick();
+    }, 50);
+  }
+  handleGameTick() {
+    if (!this.hasStartedMoving && this.hasPlayerMoved()) {
+      this.hasStartedMoving = true;
+      this.gameManager.startGame();
+      console.log("Player started moving - game begins!");
+    }
+  }
+  hasPlayerMoved() {
+    const currentPos = this.position;
+    const threshold = 1;
+    return Math.abs(currentPos.x - this.spawnPosition.x) > threshold || Math.abs(currentPos.z - this.spawnPosition.z) > threshold;
+  }
+  checkRotationViolation() {
+    const currentRotation = this.rotation.y;
+    const rotationDiff = Math.abs(currentRotation - this.lastRotation);
+    const normalizedDiff = Math.min(rotationDiff, 360 - rotationDiff);
+    if (normalizedDiff > GAME_CONFIG.ROTATION_THRESHOLD) {
+      console.log(`Rotation violation detected: ${normalizedDiff}° > ${GAME_CONFIG.ROTATION_THRESHOLD}°`);
+      this.gameManager.endGame(this.player, false);
+    }
+  }
+  getFacingDirection() {
+    return this.rotation.y;
+  }
+  getInitialDirection() {
+    return this.lastRotation;
+  }
+  hasViolatedRotation() {
+    const currentRotation = this.rotation.y;
+    const rotationDiff = Math.abs(currentRotation - this.lastRotation);
+    const normalizedDiff = Math.min(rotationDiff, 360 - rotationDiff);
+    return normalizedDiff > GAME_CONFIG.ROTATION_THRESHOLD;
+  }
+  resetGameState() {
+    this.hasStartedMoving = false;
+    this.lastRotation = this.rotation.y;
+    console.log("Player game state reset");
+  }
+  despawn() {
+    console.log(`GamePlayerEntity despawning for player ${this.player.username}`);
+    super.despawn();
+  }
+}
+
+// src/systems/AudioSystem.ts
+class AudioSystem {
+  world;
+  ambientAudio = null;
+  activeAudios = new Map;
+  isGameStarted = false;
+  constructor(world) {
+    this.world = world;
+  }
+  initialize() {
+    console.log("AudioSystem: Initializing audio system...");
+    this.startAmbientAudio();
+  }
+  startAmbientAudio() {
+    try {
+      this.ambientAudio = new PW({
+        uri: "audio/music/hytopia-main.mp3",
+        loop: true,
+        volume: GAME_CONFIG.AMBIENT_VOLUME
+      });
+      this.ambientAudio.play(this.world);
+      console.log("AudioSystem: Ambient audio started");
+    } catch (error) {
+      console.error("AudioSystem: Failed to start ambient audio:", error);
+    }
+  }
+  startGameAudio() {
+    if (this.isGameStarted)
+      return;
+    this.isGameStarted = true;
+    console.log("AudioSystem: Game audio started");
+  }
+  playCheckpointAudio(checkpointId) {
+    console.log(`AudioSystem: Playing checkpoint ${checkpointId} audio`);
+    switch (checkpointId) {
+      case 1:
+        this.playWhisper("hey");
+        break;
+      case 2:
+        this.playWhisper("wait");
+        this.playEffect("block-fall");
+        break;
+      case 3:
+        this.startFootsteps();
+        break;
+      case 4:
+        this.playEffect("crying");
+        break;
+      case 5:
+        this.playEffect("breathing");
+        break;
+      case 6:
+        this.playWhisper("look-at-me");
+        this.playEffect("wall-rumble");
+        break;
+      case 7:
+        this.playEffect("metal-scrape");
+        break;
+      case 8:
+        break;
+    }
+  }
+  playWhisper(whisperType) {
+    console.log(`AudioSystem: Playing whisper: ${whisperType}`);
+    try {
+      const whisperAudio = new PW({
+        uri: `audio/whispers/${whisperType}.mp3`,
+        loop: false,
+        volume: GAME_CONFIG.WHISPER_VOLUME
+      });
+      whisperAudio.play(this.world);
+      this.activeAudios.set(`whisper-${whisperType}`, whisperAudio);
+    } catch (error) {
+      console.error(`AudioSystem: Failed to play whisper ${whisperType}:`, error);
+    }
+  }
+  playEffect(effectType) {
+    console.log(`AudioSystem: Playing effect: ${effectType}`);
+    try {
+      const effectAudio = new PW({
+        uri: `audio/effects/${effectType}.mp3`,
+        loop: false,
+        volume: GAME_CONFIG.EFFECTS_VOLUME
+      });
+      effectAudio.play(this.world);
+      this.activeAudios.set(`effect-${effectType}`, effectAudio);
+    } catch (error) {
+      console.error(`AudioSystem: Failed to play effect ${effectType}:`, error);
+    }
+  }
+  startFootsteps() {
+    console.log("AudioSystem: Starting following footsteps");
+    try {
+      const footstepsAudio = new PW({
+        uri: "audio/effects/footsteps.mp3",
+        loop: true,
+        volume: GAME_CONFIG.EFFECTS_VOLUME * 0.8
+      });
+      footstepsAudio.play(this.world);
+      this.activeAudios.set("footsteps", footstepsAudio);
+    } catch (error) {
+      console.error("AudioSystem: Failed to start footsteps:", error);
+    }
+  }
+  playBadEndingAudio() {
+    console.log("AudioSystem: Playing bad ending audio");
+    this.stopAllAudio();
+    try {
+      const badEndingAudio = new PW({
+        uri: "audio/whispers/i-told-you-not-to.mp3",
+        loop: false,
+        volume: GAME_CONFIG.WHISPER_VOLUME
+      });
+      badEndingAudio.play(this.world);
+    } catch (error) {
+      console.error("AudioSystem: Failed to play bad ending audio:", error);
+    }
+  }
+  playGoodEndingAudio() {
+    console.log("AudioSystem: Playing good ending audio");
+    this.fadeOutAmbient();
+    try {
+      const goodEndingAudio = new PW({
+        uri: "audio/ambient/calm-ambient.mp3",
+        loop: false,
+        volume: GAME_CONFIG.AMBIENT_VOLUME
+      });
+      goodEndingAudio.play(this.world);
+    } catch (error) {
+      console.error("AudioSystem: Failed to play good ending audio:", error);
+    }
+  }
+  fadeOutAmbient() {
+    if (this.ambientAudio) {
+      const silentAudio = new PW({
+        uri: "audio/music/hytopia-main.mp3",
+        loop: false,
+        volume: 0
+      });
+      this.ambientAudio = silentAudio;
+    }
+  }
+  stopAllAudio() {
+    console.log("AudioSystem: Stopping all audio");
+    this.ambientAudio = null;
+    this.activeAudios.clear();
+  }
+  reset() {
+    console.log("AudioSystem: Resetting audio system");
+    this.stopAllAudio();
+    this.isGameStarted = false;
+    setTimeout(() => {
+      this.startAmbientAudio();
+    }, 1000);
+  }
+  cleanup() {
+    console.log("AudioSystem: Cleaning up audio system");
+    this.stopAllAudio();
+  }
+}
+
+// src/game/GameManager.ts
+class GameManager {
+  world;
+  gameStarted = false;
+  gameEnded = false;
+  playerEntities = new Map;
+  audioSystem;
+  constructor(world) {
+    this.world = world;
+    this.audioSystem = new AudioSystem(world);
+    this.setupEventListeners();
+    this.initializeSystems();
+  }
+  initializeSystems() {
+    console.log("GameManager: Initializing game systems...");
+    this.audioSystem.initialize();
+  }
+  setupEventListeners() {
+    this.world.on(hz.JOINED_WORLD, ({ player }) => {
+      this.handlePlayerJoin(player);
+    });
+    this.world.on(hz.LEFT_WORLD, ({ player }) => {
+      this.handlePlayerLeave(player);
+    });
+  }
+  handlePlayerJoin(player) {
+    console.log(`Player ${player.username} joined the game`);
+    const playerEntity = new GamePlayerEntity({
+      player,
+      name: player.username,
+      gameManager: this
+    });
+    const spawnPosition = new MW(GAME_CONFIG.SPAWN_POSITION.x, GAME_CONFIG.SPAWN_POSITION.y, GAME_CONFIG.SPAWN_POSITION.z);
+    playerEntity.spawn(this.world, spawnPosition);
+    this.playerEntities.set(player.id, playerEntity);
+    player.ui.load("ui/index.html");
+    this.sendWelcomeMessages(player);
+    this.initializeGameForPlayer(player);
+  }
+  handlePlayerLeave(player) {
+    console.log(`Player ${player.username} left the game`);
+    this.world.entityManager.getPlayerEntitiesByPlayer(player).forEach((entity) => {
+      entity.despawn();
+    });
+    this.playerEntities.delete(player.id);
+  }
+  sendWelcomeMessages(player) {
+    this.world.chatManager.sendPlayerMessage(player, "You wake up in a dark tunnel...", "FF6B6B");
+    this.world.chatManager.sendPlayerMessage(player, "DON'T TURN AROUND.", "FF0000");
+    this.world.chatManager.sendPlayerMessage(player, "Walk forward to the exit. That's all you have to do.", "FFFFFF");
+  }
+  initializeGameForPlayer(player) {
+    console.log(`Game initialized for player ${player.username}`);
+  }
+  startGame() {
+    if (this.gameStarted)
+      return;
+    this.gameStarted = true;
+    console.log("Game started");
+    this.audioSystem.startGameAudio();
+  }
+  endGame(player, goodEnding) {
+    if (this.gameEnded)
+      return;
+    this.gameEnded = true;
+    console.log(`Game ended for ${player.username} - Good ending: ${goodEnding}`);
+    if (goodEnding) {
+      this.audioSystem.playGoodEndingAudio();
+    } else {
+      this.audioSystem.playBadEndingAudio();
+    }
+  }
+  onCheckpointReached(checkpointId) {
+    console.log(`Checkpoint ${checkpointId} reached`);
+    this.audioSystem.playCheckpointAudio(checkpointId);
+  }
+  getPlayerEntity(player) {
+    return this.playerEntities.get(player.id);
+  }
+  isGameActive() {
+    return this.gameStarted && !this.gameEnded;
+  }
+  resetGame() {
+    this.gameStarted = false;
+    this.gameEnded = false;
+    this.audioSystem.reset();
+    console.log("Game state reset");
+  }
+  getAudioSystem() {
+    return this.audioSystem;
+  }
+}
+
 // index.ts
 J$6((world) => {
+  console.log('Starting "Turn Around" horror game server...');
   world.loadMap(map_default);
-  world.on(hz.JOINED_WORLD, ({ player }) => {
-    const playerEntity = new rO({
-      player,
-      name: "Player"
-    });
-    playerEntity.spawn(world, { x: 0, y: 10, z: 0 });
-    player.ui.load("ui/index.html");
-    world.chatManager.sendPlayerMessage(player, "Welcome to the game!", "00FF00");
-    world.chatManager.sendPlayerMessage(player, "Use WASD to move around & space to jump.");
-    world.chatManager.sendPlayerMessage(player, "Hold shift to run.");
-    world.chatManager.sendPlayerMessage(player, "Random cosmetic items are enabled for testing!");
-    world.chatManager.sendPlayerMessage(player, "Press \\ to enter or exit debug view.");
-  });
-  world.on(hz.LEFT_WORLD, ({ player }) => {
-    world.entityManager.getPlayerEntitiesByPlayer(player).forEach((entity) => entity.despawn());
-  });
-  world.chatManager.registerCommand("/rocket", (player) => {
-    world.entityManager.getPlayerEntitiesByPlayer(player).forEach((entity) => {
-      entity.applyImpulse({ x: 0, y: 20, z: 0 });
-    });
-  });
-  new PW({
-    uri: "audio/music/hytopia-main.mp3",
-    loop: true,
-    volume: 0.1
-  }).play(world);
+  const gameManager = new GameManager(world);
+  console.log("Game server initialized. Waiting for players...");
 });
